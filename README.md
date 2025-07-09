@@ -50,7 +50,7 @@ make build
 ```
 Core/
 ├── cmd/ued/               # Command line interface
-├── app/                   # Main application logic
+├── node/                  # Main node logic
 ├── modules/               # Core blockchain modules
 ├── core/                  # Fundamental components
 ├── protocol/              # Protocol layer
