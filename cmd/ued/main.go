@@ -3,8 +3,13 @@ package main
 import (
 	"fmt"
 	"os"
+	"time"
 
 	"github.com/spf13/cobra"
+
+	"undergroundempire/core/types"
+	"undergroundempire/modules/consensus"
+	"undergroundempire/modules/validator"
 )
 
 var (
@@ -38,6 +43,7 @@ func init() {
 	rootCmd.AddCommand(validatorCmd)
 	rootCmd.AddCommand(treasuryCmd)
 	rootCmd.AddCommand(governanceCmd)
+	rootCmd.AddCommand(demoConsensusCmd)
 }
 
 // startCmd represents the start command
@@ -117,6 +123,51 @@ Governance features include:
 - Voting on proposals
 - Parameter change proposals
 - Emergency proposals for critical issues`,
+}
+
+var demoConsensusCmd = &cobra.Command{
+	Use:   "demo-consensus",
+	Short: "Run a simulated in-memory consensus round with multiple validators",
+	Run: func(cmd *cobra.Command, args []string) {
+		fmt.Println("[Demo] Starting in-memory consensus demo with 3 validators...")
+
+		// 1. Setup validators
+		valMgr := validator.NewValidatorManager()
+		vals := []validator.ValidatorNode{
+			{ID: "val1", StakeAmount: 30000},
+			{ID: "val2", StakeAmount: 30000},
+			{ID: "val3", StakeAmount: 30000},
+		}
+		for _, v := range vals {
+			valMgr.RegisterNode(types.Context{}, v)
+		}
+
+		// 2. Setup consensus engine
+		engine := consensus.NewInMemoryConsensusEngine(valMgr, vals)
+
+		// 3. Simulate consensus for 200 blocks
+		for i := 0; i < 200; i++ {
+			fmt.Printf("\n[Demo] === Block %d ===\n", i+1)
+			block, _ := engine.ProposeBlock()
+			fmt.Printf("[Demo] Proposer: %s\n", block.Proposer)
+			engine.PreVote(block)
+			engine.PreCommit(block)
+			err := engine.FinalizeBlock(block)
+			if err != nil {
+				fmt.Println("[Demo] Finalization error:", err)
+			} else {
+				fmt.Printf("[Demo] Block %d finalized/mined!\n", block.Height)
+				fmt.Printf("[Demo] Timestamp: %s\n", block.Timestamp.Format(time.RFC3339))
+			}
+			fmt.Println("[Demo] ----------------------")
+
+			// Add delay after block mining for better demo experience
+			if i < 199 {
+				time.Sleep(2 * time.Second)
+			}
+		}
+		fmt.Println("[Demo] Consensus demo complete.")
+	},
 }
 
 func main() {
